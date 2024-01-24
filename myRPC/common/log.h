@@ -1,7 +1,9 @@
 #ifndef MYRPC_COMMON_LOG_H
 #define MYRPC_COMMON_LOG_H
 
+#include <queue>
 #include <string>
+#include <memory>
 
 namespace myRPC {
 
@@ -29,16 +31,33 @@ enum LogLevel {
     Error = 3
 };
 
+class Logger {
+public:
+    typedef std::shared_ptr<Logger> s_ptr;
+    void pushLog(const std::string& msg);
+    void log();
+public:
+    static Logger* GetGlobalLogger();
+private:
+    LogLevel m_set_level;
+
+    std::queue<std::string> m_buffer;
+};
+
+std::string LogLevelToString(LogLevel level);
+
 class LogEvent {
 public:
+    LogEvent(LogLevel level) : m_level(level) {};
+
     std::string getFileName() const {
         return m_file_name;
     }
     LogLevel getLogLevel() const {
         return m_level;
     }
-    void printLog();
-    
+    std::string toString();
+
 private:
     std::string m_file_name; // file name
     int32_t m_file_line; // line number
@@ -48,6 +67,8 @@ private:
     LogLevel m_level; // level of log
     
 };
+
+
 
 }
 
