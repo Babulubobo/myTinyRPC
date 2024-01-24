@@ -34,10 +34,11 @@ public:
     std::string getFileName() const {
         return m_file_name;
     }
-
     LogLevel getLogLevel() const {
         return m_level;
     }
+    void printLog();
+    
 private:
     std::string m_file_name; // file name
     int32_t m_file_line; // line number
