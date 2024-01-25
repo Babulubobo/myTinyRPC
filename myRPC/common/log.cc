@@ -5,20 +5,17 @@
 #include "myRPC/common/log.h"
 #include "myRPC/common/util.h"
 
-#define DEBUGLOG(str, ...)\
-    string msg = (new myRPC::LogEvent(myRPC::LogLevel::Debug)->toString()) + myRPC::formatString(str, ##__VA_ARGS__);\
-    myRPC::g_logger->pushLog(msg);\
-    myRPC::g_logger->log();\
 
 namespace myRPC{
 
 static Logger* g_logger = nullptr;
 
 Logger* Logger::GetGlobalLogger() {
-    if(g_logger != nullptr) {
+    if(g_logger) {
         return g_logger;
     }
-    return new Logger();
+    g_logger = new Logger();
+    return g_logger;
 }
 
 std::string LogLevelToString(LogLevel level){
@@ -56,7 +53,8 @@ std::string LogEvent::toString() {
 
     ss << "[" << LogLevelToString(m_level) << "]\t"
         << "[" << time_str << "]\t"
-        << "[" << std::string(__FILE__) << __LINE__ << "]\t";
+        << "[" << m_pid << ":" << m_thread_id << "]\t"
+        << "[" << std::string(__FILE__) << ":" << __LINE__ << "]\t";
 
     return ss.str();
 

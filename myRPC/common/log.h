@@ -25,6 +25,12 @@ std::string formatString(const char* str, Args&&... args) {
     return result;
 }
 
+#define DEBUGLOG(str, ...)\
+    std::string msg = (new myRPC::LogEvent(myRPC::LogLevel::Debug))->toString() + myRPC::formatString(str, ##__VA_ARGS__);\
+    msg += '\n';\
+    myRPC::Logger::GetGlobalLogger()->pushLog(msg);\
+    myRPC::Logger::GetGlobalLogger()->log();\
+
 enum LogLevel {
     Debug = 1,
     Info = 2,
