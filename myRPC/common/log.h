@@ -5,6 +5,9 @@
 #include <string>
 #include <memory>
 
+#include "myRPC/common/config.h"
+#include "myRPC/common/mutex.h"
+
 namespace myRPC {
 
 template<typename... Args>
@@ -25,32 +28,73 @@ std::string formatString(const char* str, Args&&... args) {
     return result;
 }
 
+
+
 #define DEBUGLOG(str, ...)\
-    std::string msg = (new myRPC::LogEvent(myRPC::LogLevel::Debug))->toString() + myRPC::formatString(str, ##__VA_ARGS__);\
-    msg += '\n';\
-    myRPC::Logger::GetGlobalLogger()->pushLog(msg);\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Debug) { \
+    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Debug))->toString() \
+     + "[" + std::string(__FILE__) + ":" +std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
     myRPC::Logger::GetGlobalLogger()->log();\
+    }\
+    
+#define INFOLOG(str, ...)\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Info) { \
+    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Info))->toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
+    myRPC::Logger::GetGlobalLogger()->log();\
+    }\
+
+#define ERRORLOG(str, ...)\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Error) { \
+    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Error))->toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
+    myRPC::Logger::GetGlobalLogger()->log();\
+    }\
+
+
 
 enum LogLevel {
+    Unknown = 0,
     Debug = 1,
     Info = 2,
     Error = 3
 };
 
+
+
 class Logger {
 public:
+    Logger(LogLevel level) : m_set_level(level) {};
+
     typedef std::shared_ptr<Logger> s_ptr;
+
+    LogLevel getLogLevel() const {
+        return m_set_level;
+    }
+
     void pushLog(const std::string& msg);
+
     void log();
+
 public:
     static Logger* GetGlobalLogger();
+    static void InitGlobalLogger();
+    
 private:
     LogLevel m_set_level;
 
     std::queue<std::string> m_buffer;
+
+    Mutex m_mutex;
 };
 
+
+
 std::string LogLevelToString(LogLevel level);
+
+LogLevel StringToLogLevel(const std::string& log_level);
+
+
 
 class LogEvent {
 public:
