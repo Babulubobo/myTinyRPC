@@ -1,10 +1,11 @@
+#include <string.h>
 #include "myRPC/net/fd_event.h"
 #include "myRPC/common/log.h"
 
 namespace myRPC {
 
 FdEvent::FdEvent(int fd) : m_fd(fd) {
-
+    memset(&m_listen_events, 0, sizeof(m_listen_events));
 }
 
 FdEvent::~FdEvent() {

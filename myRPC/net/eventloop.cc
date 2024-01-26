@@ -15,6 +15,7 @@
             op = EPOLL_CTL_MOD; \
         } \
         epoll_event tmp = event->getEpollEvent(); \
+        INFOLOG("epoll_event.events = %d", (int)tmp.events); \
         int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp); \
         if(rt == -1) { \
             ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno)); \
@@ -48,7 +49,7 @@
 
 namespace myRPC {
 
-// if there is an Eventloop in this thread
+// if there is an Eventloop in this thread (1 thread 1 eventloop)
 static thread_local Eventloop* t_current_eventloop = NULL;
 
 static int g_epoll_max_timeout = 10000;//max 10 seconds
@@ -84,7 +85,7 @@ Eventloop::~Eventloop(){
 
 void Eventloop::initWakeUpFdEvent() {
     m_wakeup_fd = eventfd(0, EFD_NONBLOCK);
-    if(m_wakeup_fd < 0) {
+    if(m_wakeup_fd == -1) {
         ERRORLOG("failed to create event loop, eventfd error, error info[%d]", errno);
         exit(0);
     }
@@ -106,18 +107,24 @@ void Eventloop::initWakeUpFdEvent() {
 void Eventloop::loop(){
     while(!m_stop_flag) {
         ScopeMutex<Mutex> eventLock(m_mutex);
-        std::queue<std::function<void()>> tmp_tasks = m_pending_tasks;
+        std::queue<std::function<void()>> tmp_tasks;
         m_pending_tasks.swap(tmp_tasks);
         eventLock.unlock();
 
         while(!tmp_tasks.empty()) {
-            tmp_tasks.front()();
+            std::function<void()> cb = tmp_tasks.front();
             tmp_tasks.pop();
+            if(cb) {
+                cb();
+            }
         }
 
         int timeout = g_epoll_max_timeout;
         epoll_event result_events[g_epoll_max_events];
+
+        // DEBUGLOG("now epoll_wait begin");
         int rt = epoll_wait(m_epoll_fd, result_events, g_epoll_max_events, timeout);
+        DEBUGLOG("now epoll_wait end, rt = %d", rt);
 
         if(rt < 0) {
             // epoll_wait error
@@ -127,13 +134,15 @@ void Eventloop::loop(){
             for(int i = 0; i < rt; i ++){
                 epoll_event trigger_event = result_events[i];
                 FdEvent* fd_event = static_cast<FdEvent*>(trigger_event.data.ptr);
-                if(fd_event = nullptr) {
+                if(fd_event == nullptr) {
                     continue;
                 }
-                if(trigger_event.events | EPOLLIN) {
+                if(trigger_event.events & EPOLLIN) {
+                    DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd());
                     addTask(fd_event->handler(FdEvent::IN_EVENT));
                 }
-                if(trigger_event.events | EPOLLOUT) {
+                if(trigger_event.events & EPOLLOUT) {
+                    DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd());
                     addTask(fd_event->handler(FdEvent::OUT_EVENT));
                 }
             }
@@ -142,7 +151,8 @@ void Eventloop::loop(){
 }
 
 void Eventloop::wakeup(){
-
+    INFOLOG("wake up");
+    m_wakeup_fd_event->wakeup();
 }
 
 void Eventloop::stop(){

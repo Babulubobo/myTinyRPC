@@ -78,7 +78,7 @@ void Logger::pushLog(const std::string& msg){
 void Logger::log() {
 
     ScopeMutex<Mutex> logLock(m_mutex);
-    std::queue<std::string> tmp = m_buffer;
+    std::queue<std::string> tmp;
     m_buffer.swap(tmp);
 
     logLock.unlock();
