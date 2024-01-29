@@ -3,9 +3,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <memory>
 #include "myRPC/common/log.h"
 #include "myRPC/common/config.h"
 #include "myRPC/net/eventloop.h"
+#include "myRPC/net/timer_event.h"
 
 int main() {
     myRPC::Config::SetGlobalConfig("../conf/myRPC.xml");
@@ -49,6 +51,15 @@ int main() {
     });
     
     eventloop->addEpollEvent(&event);
+
+    int i = 0;
+    myRPC::TimerEvent::s_ptr timer_event = std::make_shared<myRPC::TimerEvent>(
+        1000, true, [&i]() {
+            INFOLOG("trigger timer event, count = %d", i++);
+        }
+    );
+
+    eventloop->addTimerEvent(timer_event);
 
     eventloop->loop();
 

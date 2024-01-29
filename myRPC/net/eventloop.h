@@ -9,6 +9,7 @@
 #include "myRPC/common/mutex.h"
 #include "myRPC/net/fd_event.h"
 #include "myRPC/net/wakeup_fd_event.h"
+#include "myRPC/net/timer.h"
 
 namespace myRPC {
 class Eventloop {
@@ -30,10 +31,14 @@ public:
 
     void addTask(std::function<void()> cb, bool is_wake_up = false);
 
+    void addTimerEvent(TimerEvent::s_ptr event);
+
 private:
     void dealWakeUp();
 
     void initWakeUpFdEvent();
+
+    void initTimer();
 
 private:
     pid_t m_thread_id {0};
@@ -51,6 +56,8 @@ private:
     std::queue<std::function<void()>> m_pending_tasks; // task list need to do
 
     Mutex m_mutex; // mutex used in the eventloop 
+
+    Timer* m_timer {nullptr};
 
 };
 }
