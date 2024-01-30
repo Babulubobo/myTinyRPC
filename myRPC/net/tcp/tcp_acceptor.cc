@@ -52,6 +52,10 @@ TcpAcceptor::~TcpAcceptor() {
 
 }
 
+int TcpAcceptor::getListenFd() {
+    return m_listenfd;
+}
+
 int TcpAcceptor::accept() {
     // ipv4
     if(m_family == AF_INET) {
@@ -65,9 +69,10 @@ int TcpAcceptor::accept() {
             ERRORLOG("accept error, errno=%d, error=%s", errno, strerror(errno));
         }
         IPNetAddr peer_addr(client_addr);
-        INFOLOG("A client has accepted success, peer addr [%s]", peer_addr.toString());
+        INFOLOG("A client has accepted success, peer addr [%s]", peer_addr.toString().c_str());
         return client_fd;
     }
+    return -1;
 }
 
 

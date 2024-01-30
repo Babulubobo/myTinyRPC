@@ -219,4 +219,12 @@ bool Eventloop::isInLoopThread() {
     return getThreadId() == m_thread_id;
 }
 
+Eventloop* Eventloop::GetCurrentEventLoop() {
+    if(t_current_eventloop) {
+        return t_current_eventloop;
+    }
+    t_current_eventloop = new Eventloop();
+    return t_current_eventloop;
+}
+
 }
