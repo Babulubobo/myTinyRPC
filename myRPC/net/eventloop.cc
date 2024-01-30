@@ -107,6 +107,7 @@ void Eventloop::initWakeUpFdEvent() {
         ERRORLOG("failed to create event loop, eventfd error, error info[%d]", errno);
         exit(0);
     }
+    INFOLOG("wakeup fd = %d", m_wakeup_fd);
 
     m_wakeup_fd_event = new WakeUpFdEvent(m_wakeup_fd);
 

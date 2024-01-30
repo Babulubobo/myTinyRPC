@@ -16,7 +16,10 @@ public:
     ~IOThread();
 
     Eventloop* getEventloop();
-    
+
+    void start();
+
+    void join();
 
 public:
     static void* Main(void* arg);
@@ -24,11 +27,13 @@ public:
 private:
     pid_t m_thread_id {-1};  // thread id
 
-    pthread_t m_thread {-1}; // thread handle
+    pthread_t m_thread {0}; // thread handle
 
     Eventloop* m_event_loop {nullptr}; // The loop object of the current I/O thread.
 
     sem_t m_init_semaphore;
+
+    sem_t m_start_semaphore;
 };
 
 

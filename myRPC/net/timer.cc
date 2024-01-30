@@ -105,7 +105,7 @@ void Timer::resetArriveTime() {
     timespec ts;
     memset(&ts, 0, sizeof(ts));
     ts.tv_sec = inteval / 1000;
-    ts.tv_nsec = (inteval % 1000) * 100000;
+    ts.tv_nsec = (inteval % 1000) * 1000000;
 
     itimerspec value;
     memset(&value, 0, sizeof(value));
