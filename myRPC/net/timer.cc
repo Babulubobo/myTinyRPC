@@ -138,7 +138,7 @@ void Timer::addTimerEvent(TimerEvent::s_ptr event) {
     m_pending_events.emplace(event->getArriveTime(), event);
     timerAddLock.unlock();
 
-    if(is_reset_timerfd = true) {
+    if(is_reset_timerfd == true) {
     resetArriveTime();
     }
 }

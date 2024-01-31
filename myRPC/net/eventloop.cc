@@ -20,6 +20,7 @@
         if(rt == -1) { \
             ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno)); \
         } \
+        m_listen_fds.insert(event->getFd()); \
         DEBUGLOG("add event successfully, fd[%d]", event->getFd());\
 
 
@@ -45,6 +46,7 @@
         if(rt == -1) {\
             ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno));\
         }\
+        m_listen_fds.erase(event->getFd()); \
         DEBUGLOG("del event successfully, fd[%d]", event->getFd());\
 
 namespace myRPC {

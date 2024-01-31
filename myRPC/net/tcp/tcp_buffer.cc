@@ -43,7 +43,8 @@ void TcpBuffer::writeToBuffer(const char* buf, int size) {
         int new_size = (int)(1.5 * (m_write_index + size));
         resizeBuffer(new_size);
     }
-    memcpy(&m_buffer[m_write_index], buf, size); // update m_write_index??
+    memcpy(&m_buffer[m_write_index], buf, size); // update m_write_index?? done.
+    m_write_index += size;
 }
 
 

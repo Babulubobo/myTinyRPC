@@ -12,11 +12,14 @@ TcpConnection::TcpConnection(IOThread* io_thread, int fd, int buffer_size, NetAd
     m_out_buffer = std::make_shared<TcpBuffer> (buffer_size);
 
     m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
+    m_fd_event->setNonBlock();
     m_fd_event->listen(FdEvent::IN_EVENT, std::bind(&TcpConnection::onRead, this));
+
+    io_thread->getEventloop()->addEpollEvent(m_fd_event);
 }
 
 TcpConnection::~TcpConnection() {
-
+    DEBUGLOG("~TcpConnection");
 }
 
 void TcpConnection::onRead() {
@@ -37,7 +40,7 @@ void TcpConnection::onRead() {
         int write_index = m_in_buffer->writeIndex();
 
         int rt = read(m_fd, &(m_in_buffer->m_buffer[write_index]), read_count);
-        DEBUGLOG("success read %d bytes from addr[%s], client fd[%d]", m_peer_addr->toString().c_str(), m_fd);
+        DEBUGLOG("success read %d bytes from addr[%s], client fd[%d]", rt, m_peer_addr->toString().c_str(), m_fd);
         if(rt > 0) {
             m_in_buffer->moveWriteIndex(rt);
 
@@ -49,14 +52,19 @@ void TcpConnection::onRead() {
                 break;
             }
         }
-        else {
+        else if (rt == 0) {
             is_close = true;
+            break;
+        }
+        else if (rt == -1 && errno == EAGAIN) {
+            is_read_all = true;
+            break;
         }
     }
 
     if(is_close) {
-        // TODO: handle the closure of the TCP connection
         INFOLOG("peer closed, peer addr [%s] ,clientfd [%d]", m_peer_addr->toString().c_str(), m_fd);
+        clear();
     }
 
     if(!is_read_all) {
@@ -75,7 +83,7 @@ void TcpConnection::execute() {
     m_in_buffer->readFromBuffer(tmp, size); //???
 
     std::string msg;
-    for(int i = 0; i < tmp.size(); i ++){
+    for(size_t i = 0; i < tmp.size(); i ++){
         msg += tmp[i];
     }
 
@@ -84,6 +92,7 @@ void TcpConnection::execute() {
     m_out_buffer->writeToBuffer(msg.c_str(), msg.length());
     
     m_fd_event->listen(FdEvent::OUT_EVENT, std::bind(&TcpConnection::onWrite, this));
+    m_io_thread->getEventloop()->addEpollEvent(m_fd_event);
 }
 
 void TcpConnection::onWrite() {
@@ -91,11 +100,14 @@ void TcpConnection::onWrite() {
 
     if(m_state != Connected) {
         ERRORLOG("OnWrite error: client has already disconnected, addr[%s], clientfd[%d]", m_peer_addr->toString().c_str(), m_fd);
+        return;
     }
 
+    bool is_write_all = false;
     while(true) {
         if(m_out_buffer->readAble() == 0) {
-            DEBUGLOG("no data need to sent to client [%s]", m_peer_addr->toString().c_str(), m_fd);
+            DEBUGLOG("no data need to sent to client [%s]", m_peer_addr->toString().c_str());
+            is_write_all = true;
             break;
         }
 
@@ -104,7 +116,8 @@ void TcpConnection::onWrite() {
         int rt = write(m_fd, &(m_out_buffer->m_buffer[read_index]), write_size);
 
         if(rt >= write_size) {
-            DEBUGLOG("no data need to sent to client [%s]", m_peer_addr->toString().c_str(), m_fd);
+            DEBUGLOG("no data need to sent to client [%s]", m_peer_addr->toString().c_str());
+            is_write_all = true;
             break;
         }
         if(rt == -1 && errno == EAGAIN) {
@@ -114,7 +127,45 @@ void TcpConnection::onWrite() {
             break;
         }
     }
+    if(is_write_all) {
+        INFOLOG("is_write_all true");
+        m_fd_event->cancel(FdEvent::OUT_EVENT);
+        m_io_thread->getEventloop()->addEpollEvent(m_fd_event);
+    }
 }
 
+void TcpConnection::setState(const TcpState state) {
+    m_state = state; //??? m_state = Connected ???
+}
+
+TcpState TcpConnection::getState() {
+    return m_state;
+}
+
+void TcpConnection::clear() {
+    // make some clear when connection is close
+
+    if(m_state == Closed) {
+        return;
+    }
+
+    m_io_thread->getEventloop()->delEpollEvent(m_fd_event);
+
+    m_state = Closed;
+}
+
+void TcpConnection::shutdown() {
+    if(m_state == Closed || m_state == NotConnected) {
+        return;
+    }
+
+    m_state = HalfClosing;
+
+    // Calling shutdown to close both reading and writing 
+    // means that the server will no longer perform read or write operations on this fd.
+    // send FIN signal, trigger 4 times wave hand section 1
+    // when fd read event happen and read data=0, means peer send FIN signal
+    ::shutdown(m_fd, SHUT_RDWR);
+}
 
 } // namespace myRPC

@@ -1,6 +1,7 @@
 #include "myRPC/net/tcp/tcp_server.h"
 #include "myRPC/net/eventloop.h"
 #include "myRPC/common/log.h"
+#include "myRPC/net/tcp/tcp_connection.h"
 
 namespace myRPC
 {
@@ -33,12 +34,17 @@ void TcpServer::init() {
 }
 
 void TcpServer::onAccept() {
-    int client_fd = m_acceptor->accept();
-    // FdEvent client_fd_event(client_fd);
+    auto re = m_acceptor->accept();
+    int client_fd = re.first;
+    NetAddr::s_ptr peer_addr = re.second;
+
     m_client_counts ++;
 
-    // TODO: add client_fd to either IO thread
-    // m_io_thread_group->getIOThread()->getEventloop()->addEpollEvent(&client_fd_event);
+    // add client_fd to either IO thread
+    IOThread* io_thread = m_io_thread_group->getIOThread();
+    TcpConnection::s_ptr connection = std::make_shared<TcpConnection>(io_thread, client_fd, 128, peer_addr);
+    connection->setState(Connected);
+    m_client.insert(connection); // ??? why not destructor
 
     INFOLOG("TcpServer successfully get client fd=%d", client_fd);
 }

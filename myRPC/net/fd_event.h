@@ -26,6 +26,9 @@ public:
 
     void listen(TriggerEvent event_type, std::function<void()> callback);
 
+    //  cancel listen
+    void cancel(TriggerEvent event_type);
+
     int getFd() const {
         return m_fd;
     }

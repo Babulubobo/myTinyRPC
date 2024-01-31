@@ -1,7 +1,9 @@
 #ifndef MYRPC_NET_TCP_TCP_SERVER_H
 #define MYRPC_NET_TCP_TCP_SERVER_H
 
+#include <set>
 #include "myRPC/net/tcp/tcp_acceptor.h"
+#include "myRPC/net/tcp/tcp_connection.h"
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/eventloop.h"
 #include "myRPC/net/io_thread_group.h"
@@ -37,6 +39,8 @@ private:
     FdEvent* m_listen_fd_event;
 
     int m_client_counts {0};
+
+    std::set<TcpConnection::s_ptr> m_client;
 
 };
 
