@@ -11,6 +11,8 @@
 #include "myRPC/common/log.h"
 #include "myRPC/common/config.h"
 
+#include <iostream>
+
 void test_connect() {
     // call "connect" function to connect server
     // write a string
@@ -40,7 +42,9 @@ void test_connect() {
     DEBUGLOG("success write %d bytes, [%s]", rt, msg.c_str());
 
     char buf[100];
-    rt = read(fd, buf, 100);
+
+    rt = read(fd, buf, 100); // read func don't add '\0'!!!
+    buf[rt] = '\0';
 
     DEBUGLOG("success read %d bytes, [%s]", std::string(buf).size(), std::string(buf).c_str());
 }
