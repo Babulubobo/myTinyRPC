@@ -33,6 +33,8 @@ public:
 
     void addTimerEvent(TimerEvent::s_ptr event);
 
+    bool isLooping(); 
+
 public:
     static Eventloop* GetCurrentEventLoop();
 
@@ -61,6 +63,8 @@ private:
     Mutex m_mutex; // mutex used in the eventloop 
 
     Timer* m_timer {nullptr};
+
+    bool m_is_looping {false};
 
 };
 }

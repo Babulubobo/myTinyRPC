@@ -17,12 +17,17 @@ enum TcpState {
     Closed = 4,
 };
 
+enum TcpConnectionType {
+    TcpConnectionByServer = 1, // use in server, means connect to a client 
+    TcpConnectionByClient = 2, // use in client, means connect to server
+};
+
 class TcpConnection {
 public:
     typedef std::shared_ptr<TcpConnection> s_ptr;
 
 public:
-    TcpConnection(IOThread* io_thread, int fd, int buffer_size, NetAddr::s_ptr peer_addr);
+    TcpConnection(Eventloop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr);
     ~TcpConnection();
 
     void onRead();
@@ -39,9 +44,11 @@ public:
 
     void shutdown(); // The server actively closes the connection.
 
+    void setConnectionType(TcpConnectionType type);
+
 private:
 
-    IOThread* m_io_thread {nullptr}; // The I/O thread that holding this TCP connection.
+    Eventloop* m_event_loop {nullptr}; // The I/O thread that holding this TCP connection.
 
     NetAddr::s_ptr m_local_addr;
     NetAddr::s_ptr m_peer_addr;
@@ -49,13 +56,14 @@ private:
     TcpBuffer::s_ptr m_in_buffer;  // read buffer
     TcpBuffer::s_ptr m_out_buffer; // write buffer
 
-    
 
     FdEvent* m_fd_event {nullptr};
 
     TcpState m_state;
 
     int m_fd {0};
+
+    TcpConnectionType m_connection_type {TcpConnectionByServer};
 
 };
     

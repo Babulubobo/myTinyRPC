@@ -10,6 +10,10 @@
 #include <unistd.h>
 #include "myRPC/common/log.h"
 #include "myRPC/common/config.h"
+#include "myRPC/net/tcp/tcp_client.h"
+
+#include "myRPC/net/tcp/net_addr.h"
+#include "myRPC/net/tcp/tcp_server.h"
 
 #include <iostream>
 
@@ -49,13 +53,23 @@ void test_connect() {
     DEBUGLOG("success read %d bytes, [%s]", std::string(buf).size(), std::string(buf).c_str());
 }
 
+void test_tcp_client() {
+    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", 12345);
+    myRPC::TcpClient client(addr);
+    client.connect([addr]() {
+        DEBUGLOG("connect to [%s] success", addr->toString().c_str());
+    });
+}
+
 
 int main() {
 
     myRPC::Config::SetGlobalConfig("../conf/myRPC.xml");
     myRPC::Logger::InitGlobalLogger();
 
-    test_connect();
+    // test_connect();
+
+    test_tcp_client();
 
     return 0;
 }

@@ -32,21 +32,21 @@ std::string formatString(const char* str, Args&&... args) {
 
 #define DEBUGLOG(str, ...)\
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Debug) { \
-    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Debug))->toString() \
+    myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Debug).toString() \
      + "[" + std::string(__FILE__) + ":" +std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
     myRPC::Logger::GetGlobalLogger()->log();\
     }\
     
 #define INFOLOG(str, ...)\
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Info) { \
-    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Info))->toString() \
+    myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Info).toString() \
     + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
     myRPC::Logger::GetGlobalLogger()->log();\
     }\
 
 #define ERRORLOG(str, ...)\
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Error) { \
-    myRPC::Logger::GetGlobalLogger()->pushLog((new myRPC::LogEvent(myRPC::LogLevel::Error))->toString() \
+    myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Error).toString() \
     + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
     myRPC::Logger::GetGlobalLogger()->log();\
     }\
