@@ -2,9 +2,13 @@
 #define MYRPC_NET_TCP_TCP_CONNECTION_H
 
 #include <memory>
+#include <map>
+#include <queue>
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/tcp/tcp_buffer.h"
 #include "myRPC/net/io_thread.h"
+#include "myRPC/net/abstract_protocol.h"
+#include "myRPC/net/abstract_coder.h"
 
 
 namespace myRPC
@@ -46,6 +50,14 @@ public:
 
     void setConnectionType(TcpConnectionType type);
 
+    // start listen write event(used in tcp client)
+    void listenWrite();
+
+    // start listen read event(used in tcp client)
+    void listenRead();
+
+    void pushSendMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done);
+
 private:
 
     Eventloop* m_event_loop {nullptr}; // The I/O thread that holding this TCP connection.
@@ -64,6 +76,11 @@ private:
     int m_fd {0};
 
     TcpConnectionType m_connection_type {TcpConnectionByServer};
+
+    // std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>
+    std::vector<std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>> m_write_dones;
+
+    AbstractCoder* m_coder {nullptr};
 
 };
     

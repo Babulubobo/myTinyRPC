@@ -81,7 +81,10 @@ void TcpClient::connect(std::function<void()> done) {
 // asyc send message
 // if send message succeed, "done" will be done, "done"'s parameter is the message
 void TcpClient::writeMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done) {
-
+    // 1. write the "message" and "done" to the connection's buffer
+    // 2. start connection's write event
+    m_connection->pushSendMessage(message, done);
+    m_connection->listenWrite();
 }
 
 // asyc read message

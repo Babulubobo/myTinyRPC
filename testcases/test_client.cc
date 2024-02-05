@@ -14,6 +14,8 @@
 
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/tcp/tcp_server.h"
+#include "myRPC/net/string_coder.h"
+#include "myRPC/net/abstract_protocol.h"
 
 #include <iostream>
 
@@ -56,8 +58,14 @@ void test_connect() {
 void test_tcp_client() {
     myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", 12345);
     myRPC::TcpClient client(addr);
-    client.connect([addr]() {
+    client.connect([addr, &client]() { // &client???
         DEBUGLOG("connect to [%s] success", addr->toString().c_str());
+        std::shared_ptr<myRPC::StringProtocol> message = std::make_shared<myRPC::StringProtocol>();
+        message->info = "hello rpc";
+        message->setReqID("123456");
+        client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
+            DEBUGLOG("send message success");
+        });
     });
 }
 

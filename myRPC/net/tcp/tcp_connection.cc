@@ -2,6 +2,7 @@
 #include "myRPC/net/tcp/tcp_connection.h"
 #include "myRPC/net/fd_event_group.h"
 #include "myRPC/common/log.h"
+#include "myRPC/net/string_coder.h"
 
 namespace myRPC
 {
@@ -13,13 +14,18 @@ TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, Net
 
     m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
     m_fd_event->setNonBlock();
-    m_fd_event->listen(FdEvent::IN_EVENT, std::bind(&TcpConnection::onRead, this));
 
-    m_event_loop->addEpollEvent(m_fd_event);
+    listenRead();
+
+    m_coder = new StringCoder();
 }
 
 TcpConnection::~TcpConnection() {
     DEBUGLOG("~TcpConnection");
+    if(m_coder) {
+        delete m_coder;
+        m_coder = nullptr;
+    }
 }
 
 void TcpConnection::onRead() {
@@ -92,8 +98,7 @@ void TcpConnection::execute() {
 
     m_out_buffer->writeToBuffer(msg.c_str(), msg.length());
     
-    m_fd_event->listen(FdEvent::OUT_EVENT, std::bind(&TcpConnection::onWrite, this));
-    m_event_loop->addEpollEvent(m_fd_event);
+    listenWrite();
 }
 
 void TcpConnection::onWrite() {
@@ -102,6 +107,17 @@ void TcpConnection::onWrite() {
     if(m_state != Connected) {
         ERRORLOG("OnWrite error: client has already disconnected, addr[%s], clientfd[%d]", m_peer_addr->toString().c_str(), m_fd);
         return;
+    }
+
+    if(m_connection_type == TcpConnectionByClient) {
+        // 1. encode the message to get the bytestream
+        // 2. write the data to buffer, and send all
+
+        std::vector<AbstractProtocol*> messages;
+        for(size_t i = 0; i < m_write_dones.size(); i ++) {
+            messages.push_back(m_write_dones[i].first.get()); // get 方法 ???
+        }
+        m_coder->encode(messages, m_out_buffer);
     }
 
     bool is_write_all = false;
@@ -132,6 +148,14 @@ void TcpConnection::onWrite() {
         m_fd_event->cancel(FdEvent::OUT_EVENT);
         m_event_loop->addEpollEvent(m_fd_event);
     }
+
+    if(m_connection_type == TcpConnectionByClient) {
+        for(size_t i = 0; i < m_write_dones.size(); i ++) {
+            m_write_dones[i].second(m_write_dones[i].first);
+        }
+        m_write_dones.clear();
+    }
+    
 }
 
 void TcpConnection::setState(const TcpState state) {
@@ -174,5 +198,21 @@ void TcpConnection::shutdown() {
 void TcpConnection::setConnectionType(TcpConnectionType type) {
     m_connection_type = type;
 }
+
+
+void TcpConnection::listenWrite() {
+    m_fd_event->listen(FdEvent::OUT_EVENT, std::bind(&TcpConnection::onWrite, this));
+    m_event_loop->addEpollEvent(m_fd_event);
+}
+
+void TcpConnection::listenRead() {
+    m_fd_event->listen(FdEvent::IN_EVENT, std::bind(&TcpConnection::onRead, this));
+    m_event_loop->addEpollEvent(m_fd_event);
+}
+
+void TcpConnection::pushSendMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done) {
+    m_write_dones.push_back(std::make_pair(message, done));
+}
+
 
 } // namespace myRPC

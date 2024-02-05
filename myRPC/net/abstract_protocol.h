@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include "myRPC/net/tcp/tcp_buffer.h"
+
 namespace myRPC
 {
 
@@ -11,8 +13,22 @@ class AbstractProtocol {
 public:
     typedef std::shared_ptr<AbstractProtocol> s_ptr;
 
+    std::string getReqID() {
+        return m_req_id;
+    }
+
+    void setReqID(const std::string& req_id) {
+        m_req_id = req_id;
+    }
+
+    virtual ~AbstractProtocol() {};
+
+protected:
+    std::string m_req_id; // request number, unique
 
 };
+
+
     
 } // namespace myRPC
 
