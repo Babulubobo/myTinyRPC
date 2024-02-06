@@ -2,8 +2,8 @@
 #define MYRPC_NET_STRING_CODER_H
 
 #include <string>
-#include "myRPC/net/abstract_coder.h"
-#include "myRPC/net/abstract_protocol.h"
+#include "myRPC/net/coder/abstract_coder.h"
+#include "myRPC/net/coder/abstract_protocol.h"
 
 
 
@@ -40,7 +40,7 @@ class StringCoder : public AbstractCoder {
 
         std::shared_ptr<StringProtocol> msg = std::make_shared<StringProtocol>();
         msg->info = info;
-        msg->setReqID("123456");
+        msg->m_req_id = "123456";
         out_messages.push_back(msg);
     }
 
