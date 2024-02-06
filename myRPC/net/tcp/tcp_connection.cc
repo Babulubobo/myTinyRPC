@@ -6,8 +6,8 @@
 
 namespace myRPC
 {
-TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr) 
-    : m_event_loop(event_loop), m_peer_addr(peer_addr), m_state(NotConnected), m_fd(fd) {
+TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, TcpConnectionType type /*= TcpConnectionByServer*/) 
+    : m_event_loop(event_loop), m_peer_addr(peer_addr), m_state(NotConnected), m_fd(fd), m_connection_type(type) {
     
     m_in_buffer = std::make_shared<TcpBuffer> (buffer_size);
     m_out_buffer = std::make_shared<TcpBuffer> (buffer_size);
@@ -15,9 +15,11 @@ TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, Net
     m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
     m_fd_event->setNonBlock();
 
-    listenRead();
-
     m_coder = new StringCoder();
+
+    if(m_connection_type == TcpConnectionByServer) {
+        listenRead();
+    }
 }
 
 TcpConnection::~TcpConnection() {
@@ -83,22 +85,39 @@ void TcpConnection::onRead() {
 }
 
 void TcpConnection::execute() {
-    // Execute business logic for the RPC request, obtain the RPC response, and then send the RPC response.
-    std::vector<char> tmp;
-    int size = m_in_buffer->readAble();
-    tmp.resize(size);
-    m_in_buffer->readFromBuffer(tmp, size); //???
+    if(m_connection_type == TcpConnectionByServer) {
+        // Execute business logic for the RPC request, obtain the RPC response, and then send the RPC response.
+        std::vector<char> tmp;
+        int size = m_in_buffer->readAble();
+        tmp.resize(size);
+        m_in_buffer->readFromBuffer(tmp, size); //???
 
-    std::string msg;
-    for(size_t i = 0; i < tmp.size(); i ++){
-        msg += tmp[i];
+        std::string msg;
+        for(size_t i = 0; i < tmp.size(); i ++){
+            msg += tmp[i];
+        }
+
+        INFOLOG("success get request[%s] from client[%s]", msg.c_str(), m_peer_addr->toString().c_str());
+
+        m_out_buffer->writeToBuffer(msg.c_str(), msg.length());
+        
+        listenWrite();
     }
+    else {
+        // Decode from the buffer to obtain a message object,  and do the callback func.
+        std::vector<AbstractProtocol::s_ptr> result;
+        m_coder->decode(result, m_in_buffer);
 
-    INFOLOG("success get request[%s] from client[%s]", msg.c_str(), m_peer_addr->toString().c_str());
+        for(size_t i = 0; i < result.size(); i ++) {
+            std::string req_id = result[i]->getReqID();
+            auto it = m_read_dones.find(req_id);
+            if(it != m_read_dones.end()) {
+                it->second(result[i]);
+            }
 
-    m_out_buffer->writeToBuffer(msg.c_str(), msg.length());
+        }
+    }
     
-    listenWrite();
 }
 
 void TcpConnection::onWrite() {
@@ -112,10 +131,10 @@ void TcpConnection::onWrite() {
     if(m_connection_type == TcpConnectionByClient) {
         // 1. encode the message to get the bytestream
         // 2. write the data to buffer, and send all
-
-        std::vector<AbstractProtocol*> messages;
+        
+        std::vector<AbstractProtocol::s_ptr> messages;
         for(size_t i = 0; i < m_write_dones.size(); i ++) {
-            messages.push_back(m_write_dones[i].first.get()); // get 方法 ???
+            messages.push_back(m_write_dones[i].first); // get 方法 ???
         }
         m_coder->encode(messages, m_out_buffer);
     }
@@ -212,6 +231,10 @@ void TcpConnection::listenRead() {
 
 void TcpConnection::pushSendMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done) {
     m_write_dones.push_back(std::make_pair(message, done));
+}
+
+void TcpConnection::pushReadMessage(const std::string& req_id, std::function<void(AbstractProtocol::s_ptr)> done) {
+    m_read_dones.insert(std::make_pair(req_id, done));
 }
 
 

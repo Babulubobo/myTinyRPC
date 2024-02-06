@@ -8,7 +8,7 @@
 namespace myRPC
 {
 
-class AbstractProtocol {
+class AbstractProtocol : public std::enable_shared_from_this<AbstractProtocol> { // ??? yingyong tiaojian???
 
 public:
     typedef std::shared_ptr<AbstractProtocol> s_ptr;

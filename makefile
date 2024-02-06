@@ -100,7 +100,7 @@ PRINT-% : ; @echo $* = $($*)
 
 #  to clean 
 clean :
-	rm -f $(COMM_OBJ) $(NET_OBJ) $(TESTCASES) $(TEST_CASE_OUT) $(PATH_LIB)/librocket.a $(PATH_OBJ)/librocket.a # $(PATH_OBJ)/*.o
+	rm -f $(COMM_OBJ) $(NET_OBJ) $(TESTCASES) $(TEST_CASE_OUT) $(PATH_LIB)/librocket.a $(PATH_OBJ)/librocket.a $(PATH_OBJ)/*.o
 
 # install
 install:

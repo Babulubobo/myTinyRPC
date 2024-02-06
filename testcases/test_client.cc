@@ -66,6 +66,15 @@ void test_tcp_client() {
         client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
             DEBUGLOG("send message success");
         });
+        client.readMessage("123456", [](myRPC::AbstractProtocol::s_ptr done) {
+            // ???: dynamic_pointer_cast: used to change base class ptr to derived class ptr (both are shared ptr)
+            std::shared_ptr<myRPC::StringProtocol> message = std::dynamic_pointer_cast<myRPC::StringProtocol>(done);
+            DEBUGLOG("req_Id [%s], get response %s", message->getReqID().c_str(), message->info.c_str());
+        });
+
+        client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
+            DEBUGLOG("send message 222 success");
+        });
     });
 }
 
