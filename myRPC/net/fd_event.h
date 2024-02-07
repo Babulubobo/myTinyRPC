@@ -12,6 +12,7 @@ public:
     enum TriggerEvent {
         IN_EVENT = EPOLLIN,
         OUT_EVENT = EPOLLOUT,
+        ERROR_EVENT = EPOLLERR, // error事件默认添加到fd
     };
 
     FdEvent(int fd);
@@ -24,7 +25,7 @@ public:
 
     std::function<void()> handler(TriggerEvent event_type);
 
-    void listen(TriggerEvent event_type, std::function<void()> callback);
+    void listen(TriggerEvent event_type, std::function<void()> callback, std::function<void()> error_callback = nullptr);
 
     //  cancel listen
     void cancel(TriggerEvent event_type);
@@ -42,8 +43,9 @@ protected:
 
     epoll_event m_listen_events;
 
-    std::function<void()> m_read_callback;
-    std::function<void()> m_write_callback;
+    std::function<void()> m_read_callback {nullptr};
+    std::function<void()> m_write_callback {nullptr};
+    std::function<void()> m_error_callback {nullptr};
 };
 
 }

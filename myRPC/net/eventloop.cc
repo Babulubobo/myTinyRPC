@@ -167,6 +167,18 @@ void Eventloop::loop(){
                     DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd());
                     addTask(fd_event->handler(FdEvent::OUT_EVENT));
                 }
+                // if(!(trigger_event.events & EPOLLIN) && !(trigger_event.events & EPOLLOUT)) {
+                //     int event = (int)(trigger_event.events);
+                //     DEBUGLOG("unknown event = %d", event);
+                // }
+                if(trigger_event.events & EPOLLERR) {
+                    DEBUGLOG("fd %d trigger EPOLLERR event", fd_event->getFd());
+                    // delete error fd_event
+                    delEpollEvent(fd_event);
+                    if(fd_event->handler(FdEvent::ERROR_EVENT) != nullptr) {
+                        addTask(fd_event->handler(FdEvent::OUT_EVENT));
+                    }
+                }
             }
         }
     }

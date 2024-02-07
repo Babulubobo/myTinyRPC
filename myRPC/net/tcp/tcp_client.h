@@ -21,7 +21,7 @@ public:
     ~TcpClient();
 
     // asyc connect
-    // if connect succeed, "done" will be done
+    // if connect finish, "done" will be done
     void connect(std::function<void()> done);
 
     // asyc send message
@@ -34,9 +34,21 @@ public:
 
     void stop();
 
+    int getConnectErrorCode();
+
+    std::string getConnectErrorInfo();
+
+    NetAddr::s_ptr getPeerAddr();
+
+    NetAddr::s_ptr getLocalAddr();
+
+    void initLocalAddr();
+
 private:
 
     NetAddr::s_ptr m_peer_addr;
+
+    NetAddr::s_ptr m_local_addr;
 
     Eventloop* m_event_loop {nullptr};
 
@@ -46,7 +58,9 @@ private:
 
     TcpConnection::s_ptr m_connection;
 
-    
+    int m_connect_error_code {0};
+
+    std::string m_connect_error_info;
 
 };
 

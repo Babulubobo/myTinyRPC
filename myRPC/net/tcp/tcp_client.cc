@@ -3,9 +3,10 @@
 #include <string.h>
 #include "myRPC/net/tcp/tcp_client.h"
 #include "myRPC/common/log.h"
+#include "myRPC/common/error_code.h"
 #include "myRPC/net/eventloop.h"
 #include "myRPC/net/fd_event_group.h"
-
+#include "myRPC/net/tcp/net_addr.h"
 
 namespace myRPC
 {
@@ -33,7 +34,7 @@ TcpClient::~TcpClient() {
 }
 
 // asyc connect
-// if connect succeed, "done" will be done
+// if connect finish, "done" will be done
 void TcpClient::connect(std::function<void()> done) {
 
     // connect return 0: connect success
@@ -43,6 +44,8 @@ void TcpClient::connect(std::function<void()> done) {
     int rt = ::connect(m_fd, m_peer_addr->getSockAddr(), m_peer_addr->getSockLen());
     if(rt == 0) {
         DEBUGLOG("connect [%s] success", m_peer_addr->toString().c_str());
+        m_connection->setState(Connected);
+        initLocalAddr();
         if(done) {
             done();
         }
@@ -50,29 +53,37 @@ void TcpClient::connect(std::function<void()> done) {
     else if (rt == -1) {
         if(errno == EINPROGRESS) {
             // epoll listen write event and judge errno  epoll监听可写事件，然后判断错误码
-            m_fd_event->listen(FdEvent::OUT_EVENT, [this, done]() {
-                int error = 0;
-                socklen_t error_len = sizeof(error);
-                // ???
-                getsockopt(m_fd, SOL_SOCKET, SO_ERROR, &error, &error_len);
-                bool is_connect_succ = false;
-                if(error == 0) {
-                    DEBUGLOG("connect [%s] success", m_peer_addr->toString().c_str());
-                    is_connect_succ = true;
-                    m_connection->setState(Connected);
-                }
-                else {
-                    ERRORLOG("connect error, errno=%d, error=%s", errno, strerror(errno));
-                }
-                m_fd_event->cancel(FdEvent::OUT_EVENT); // after connect cancel out event listen, if not it will keeps triggering
-                m_event_loop->addEpollEvent(m_fd_event); // ??? why add? change the state
+            m_fd_event->listen(FdEvent::OUT_EVENT, 
+                [this, done]() {
+                    int rt = ::connect(m_fd, m_peer_addr->getSockAddr(), m_peer_addr->getSockLen());
+                    if((rt < 0 && errno == EISCONN) || (rt == 0)) {
+                        DEBUGLOG("connect [%s] sussess", m_peer_addr->toString().c_str());
+                        initLocalAddr();
+                        m_connection->setState(Connected);
+                    }
+                    else {
+                        if(errno == ECONNREFUSED) {
+                            m_connect_error_code = ERROR_PEER_CLOSE;
+                            m_connect_error_info = "connect refused, sys error = " + std::string(strerror(errno));
+                        }
+                        else {
+                            m_connect_error_code = ERROR_FAILED_CONNECT;
+                            m_connect_error_info = "connect unknown error, sys error = " + std::string(strerror(errno));
+                        }
+                        ERRORLOG("connect errror, errno=%d, error=%s", errno, strerror(errno));
+                        close(m_fd);
+                        m_fd = socket(m_peer_addr->getFamily(), SOCK_STREAM, 0);
 
-                // if connect succeed, do the callback function "done"
-                if(is_connect_succ && done) {
-                    done();
-                }
+                    }
+                    
+                    m_event_loop->delEpollEvent(m_fd_event);
 
-            });
+                    // if connect succeed, do the callback function "done"
+                    if(done) {
+                        done();
+                    }
+                }
+            );
             m_event_loop->addEpollEvent(m_fd_event);
 
             if(!m_event_loop->isLooping()) {
@@ -80,7 +91,12 @@ void TcpClient::connect(std::function<void()> done) {
             }
         }
         else {
+            m_connect_error_code = ERROR_FAILED_CONNECT;
+            m_connect_error_info = "connect error, sys error = " + std::string(strerror(errno));
             ERRORLOG("connect error, errno=%d, error=%s", errno, strerror(errno));
+            if(done) {
+                done();
+            }
         }
     }
 }
@@ -109,5 +125,32 @@ void TcpClient::stop() {
     }
 }
 
+int TcpClient::getConnectErrorCode() {
+    return m_connect_error_code;
+}
+
+std::string TcpClient::getConnectErrorInfo() {
+    return m_connect_error_info;
+}
+
+NetAddr::s_ptr TcpClient::getPeerAddr() {
+    return m_peer_addr;
+}
+
+NetAddr::s_ptr TcpClient::getLocalAddr() {
+    return m_local_addr;
+}
+
+void TcpClient::initLocalAddr() {
+    sockaddr_in local_addr;
+    socklen_t len = sizeof(local_addr);
+    int ret = getsockname(m_fd, reinterpret_cast<sockaddr*>(&local_addr), &len);
+    if(ret != 0) {
+        ERRORLOG("initLocalAddr error, getsockname error, errno=%d, error=%s", errno, strerror(errno));
+        return;
+    }
+
+    m_local_addr = std::make_shared<IPNetAddr>(local_addr);
+}
 
 } // namespace myRPC
