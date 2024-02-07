@@ -27,7 +27,7 @@ public:
 
     // asyc read message
     // if read message succeed, "done" will be done, "done"'s parameter is the message
-    void readMessage(const std::string& req_id, std::function<void(AbstractProtocol::s_ptr)> done);
+    void readMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
 
 private:
 

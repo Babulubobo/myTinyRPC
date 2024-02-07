@@ -96,10 +96,10 @@ void TcpClient::writeMessage(AbstractProtocol::s_ptr message, std::function<void
 
 // asyc read message
 // if read message succeed, "done" will be done, "done"'s parameter is the message
-void TcpClient::readMessage(const std::string& req_id, std::function<void(AbstractProtocol::s_ptr)> done) {
+void TcpClient::readMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done) {
     // 1. Listen for the read event.
-    // 2. Decode from the buffer to obtain a message object, Check if req_id is equal, if so, it succeeds and do the callback func.
-    m_connection->pushReadMessage(req_id, done);
+    // 2. Decode from the buffer to obtain a message object, Check if msg_id is equal, if so, it succeeds and do the callback func.
+    m_connection->pushReadMessage(msg_id, done);
     m_connection->listenRead();    
 }
 } // namespace myRPC

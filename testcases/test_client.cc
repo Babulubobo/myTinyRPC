@@ -63,7 +63,7 @@ void test_tcp_client() {
     client.connect([addr, &client]() { // &client???
         DEBUGLOG("connect to [%s] success", addr->toString().c_str());
         std::shared_ptr<myRPC::TinyPBProtocal> message = std::make_shared<myRPC::TinyPBProtocal>();
-        message->m_req_id = "123456789";
+        message->m_msg_id = "123456789";
         message->m_pb_data = "test pb data";
 
         client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
@@ -72,7 +72,7 @@ void test_tcp_client() {
         client.readMessage("123456789", [](myRPC::AbstractProtocol::s_ptr done) {
             // ???: dynamic_pointer_cast: used to change base class ptr to derived class ptr (both are shared ptr)
             std::shared_ptr<myRPC::TinyPBProtocal> message = std::dynamic_pointer_cast<myRPC::TinyPBProtocal>(done);
-            DEBUGLOG("req_Id [%s], get response %s", message->m_req_id.c_str(), message->m_pb_data.c_str());
+            DEBUGLOG("msg_id [%s], get response %s", message->m_msg_id.c_str(), message->m_pb_data.c_str());
         });
 
     });
