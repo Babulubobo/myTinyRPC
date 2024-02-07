@@ -9,6 +9,7 @@
 #include "myRPC/net/io_thread.h"
 #include "myRPC/net/coder/abstract_protocol.h"
 #include "myRPC/net/coder/abstract_coder.h"
+#include "myRPC/net/rpc/rpc_dispatcher.h"
 
 
 namespace myRPC
@@ -86,6 +87,8 @@ private:
 
     // key: req_id
     std::map<std::string, std::function<void(AbstractProtocol::s_ptr)>> m_read_dones;
+
+    std::shared_ptr<RpcDispatcher> m_dispatcher;
 
 };
     

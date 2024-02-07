@@ -20,6 +20,7 @@ TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, Net
 
     if(m_connection_type == TcpConnectionByServer) {
         listenRead();
+        m_dispatcher = std::make_shared<RpcDispatcher>();
     }
 }
 
@@ -97,8 +98,9 @@ void TcpConnection::execute() {
             INFOLOG("success get request[%s] from client[%s]", result[i]->m_req_id.c_str(), m_peer_addr->toString().c_str());
 
             std::shared_ptr<TinyPBProtocal> message = std::make_shared<TinyPBProtocal>();
-            message->m_pb_data = "hello, this is my rpc test data";
-            message->m_req_id = result[i]->m_req_id;
+            // message->m_pb_data = "hello, this is my rpc test data";
+            // message->m_req_id = result[i]->m_req_id;
+            m_dispatcher->dispatch(result[i], message);
             replay_message.emplace_back(message);
         }
 
