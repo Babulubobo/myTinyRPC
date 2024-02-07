@@ -2,7 +2,8 @@
 #include "myRPC/net/tcp/tcp_connection.h"
 #include "myRPC/net/fd_event_group.h"
 #include "myRPC/common/log.h"
-#include "myRPC/net/string_coder.h"
+#include "myRPC/net/coder/string_coder.h"
+#include "myRPC/net/coder/tinypb_coder.h"
 
 namespace myRPC
 {
@@ -15,7 +16,7 @@ TcpConnection::TcpConnection(Eventloop* event_loop, int fd, int buffer_size, Net
     m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
     m_fd_event->setNonBlock();
 
-    m_coder = new StringCoder();
+    m_coder = new TinyPBCoder();
 
     if(m_connection_type == TcpConnectionByServer) {
         listenRead();
@@ -86,20 +87,22 @@ void TcpConnection::onRead() {
 
 void TcpConnection::execute() {
     if(m_connection_type == TcpConnectionByServer) {
-        // Execute business logic for the RPC request, obtain the RPC response, and then send the RPC response.
-        std::vector<char> tmp;
-        int size = m_in_buffer->readAble();
-        tmp.resize(size);
-        m_in_buffer->readFromBuffer(tmp, size); //???
+        std::vector<myRPC::AbstractProtocol::s_ptr> result;
+        std::vector<myRPC::AbstractProtocol::s_ptr> replay_message;
+        m_coder->decode(result, m_in_buffer);
 
-        std::string msg;
-        for(size_t i = 0; i < tmp.size(); i ++){
-            msg += tmp[i];
+        for(size_t i = 0; i < result.size(); i ++) {
+            // For each request, invoke the RPC method to retrieve the response message.
+            // Put the response message to the out buffer, and listen write event.
+            INFOLOG("success get request[%s] from client[%s]", result[i]->m_req_id.c_str(), m_peer_addr->toString().c_str());
+
+            std::shared_ptr<TinyPBProtocal> message = std::make_shared<TinyPBProtocal>();
+            message->m_pb_data = "hello, this is my rpc test data";
+            message->m_req_id = result[i]->m_req_id;
+            replay_message.emplace_back(message);
         }
 
-        INFOLOG("success get request[%s] from client[%s]", msg.c_str(), m_peer_addr->toString().c_str());
-
-        m_out_buffer->writeToBuffer(msg.c_str(), msg.length());
+        m_coder->encode(replay_message, m_out_buffer);
         
         listenWrite();
     }
@@ -109,7 +112,7 @@ void TcpConnection::execute() {
         m_coder->decode(result, m_in_buffer);
 
         for(size_t i = 0; i < result.size(); i ++) {
-            std::string req_id = result[i]->getReqID();
+            std::string req_id = result[i]->m_req_id;
             auto it = m_read_dones.find(req_id);
             if(it != m_read_dones.end()) {
                 it->second(result[i]);

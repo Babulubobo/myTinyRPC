@@ -77,6 +77,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             if(req_id_len_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, req_id_len_index[%d] >= end_index[%d]", req_id_len_index, end_index);
+                continue;
             }
             message->m_req_id_len = getInt32FromNetByte(&tmp[req_id_len_index]);
             DEBUGLOG("parse req_id_len=%d", message->m_req_id_len);
@@ -92,6 +93,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             if(method_name_len_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, method_name_len_index[%d] >= end_index[%d]", method_name_len_index, end_index);
+                continue;
             }
             message->m_method_name_len = getInt32FromNetByte(&tmp[method_name_len_index]);
 
@@ -99,12 +101,13 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             char method_name[512] = {0};
             memcpy(&method_name[0], &tmp[method_name_index], message->m_method_name_len);
             message->m_method_name = std::string(method_name);
-            DEBUGLOG("parse req_id=%s", message->m_method_name.c_str());
+            DEBUGLOG("parse method_name=%s", message->m_method_name.c_str());
 
             int err_code_index = method_name_index + message->m_method_name_len; // no sizeof
             if(err_code_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, err_code_index[%d] >= end_index[%d]", err_code_index, end_index);
+                continue;
             }
             message->m_err_code = getInt32FromNetByte(&tmp[err_code_index]);
 
@@ -112,6 +115,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             if(error_info_len_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, error_info_len_index[%d] >= end_index[%d]", error_info_len_index, end_index);
+                continue;
             }
             message->m_err_info_len = getInt32FromNetByte(&tmp[error_info_len_index]);
 
@@ -119,7 +123,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             char error_info[512] = {0};
             memcpy(&error_info[0], &tmp[err_info_index], message->m_err_info_len);
             message->m_err_info = std::string(error_info);
-            DEBUGLOG("parse req_id=%s", message->m_err_info.c_str());
+            DEBUGLOG("parse err_info=%s", message->m_err_info.c_str());
 
             int pb_data_len = message->m_pk_len - message->m_method_name_len - message->m_req_id_len - message->m_err_info_len
                                 - 2 - 6 * 4; // PB_BEGIN PB_END 6*int32_t
@@ -210,6 +214,8 @@ const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocal> message, i
     len = pk_len;
 
     DEBUGLOG("encode message[%s] success", message->m_req_id.c_str());
+
+    return buf;
 }
     
 } // namespace myRPC

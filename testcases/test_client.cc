@@ -14,8 +14,10 @@
 
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/tcp/tcp_server.h"
-#include "myRPC/net/string_coder.h"
-#include "myRPC/net/abstract_protocol.h"
+#include "myRPC/net/coder/string_coder.h"
+#include "myRPC/net/coder/abstract_protocol.h"
+#include "myRPC/net/coder/tinypb_coder.h"
+#include "myRPC/net/coder/tinypb_protocol.h"
 
 #include <iostream>
 
@@ -60,21 +62,19 @@ void test_tcp_client() {
     myRPC::TcpClient client(addr);
     client.connect([addr, &client]() { // &client???
         DEBUGLOG("connect to [%s] success", addr->toString().c_str());
-        std::shared_ptr<myRPC::StringProtocol> message = std::make_shared<myRPC::StringProtocol>();
-        message->info = "hello rpc";
-        message->setReqID("123456");
+        std::shared_ptr<myRPC::TinyPBProtocal> message = std::make_shared<myRPC::TinyPBProtocal>();
+        message->m_req_id = "123456789";
+        message->m_pb_data = "test pb data";
+
         client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
             DEBUGLOG("send message success");
         });
-        client.readMessage("123456", [](myRPC::AbstractProtocol::s_ptr done) {
+        client.readMessage("123456789", [](myRPC::AbstractProtocol::s_ptr done) {
             // ???: dynamic_pointer_cast: used to change base class ptr to derived class ptr (both are shared ptr)
-            std::shared_ptr<myRPC::StringProtocol> message = std::dynamic_pointer_cast<myRPC::StringProtocol>(done);
-            DEBUGLOG("req_Id [%s], get response %s", message->getReqID().c_str(), message->info.c_str());
+            std::shared_ptr<myRPC::TinyPBProtocal> message = std::dynamic_pointer_cast<myRPC::TinyPBProtocal>(done);
+            DEBUGLOG("req_Id [%s], get response %s", message->m_req_id.c_str(), message->m_pb_data.c_str());
         });
 
-        client.writeMessage(message, [](myRPC::AbstractProtocol::s_ptr done) {
-            DEBUGLOG("send message 222 success");
-        });
     });
 }
 

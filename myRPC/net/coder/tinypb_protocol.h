@@ -8,6 +8,9 @@ namespace myRPC
 {
 
 struct TinyPBProtocal : AbstractProtocol {
+public:
+    TinyPBProtocal(){}
+    ~TinyPBProtocal(){}
 
 public:
     static char PB_START;
@@ -34,8 +37,7 @@ public:
 
 };
 
-char TinyPBProtocal::PB_START = 0x02;
-char TinyPBProtocal::PB_END = 0x03;
+
 
 
 } // namespace myRPC
