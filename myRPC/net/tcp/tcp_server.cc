@@ -42,7 +42,7 @@ void TcpServer::onAccept() {
 
     // add client_fd to either IO thread
     IOThread* io_thread = m_io_thread_group->getIOThread();
-    TcpConnection::s_ptr connection = std::make_shared<TcpConnection>(io_thread->getEventloop(), client_fd, 128, peer_addr);
+    TcpConnection::s_ptr connection = std::make_shared<TcpConnection>(io_thread->getEventloop(), client_fd, 128, m_local_addr, peer_addr);
     connection->setState(Connected);
     m_client.insert(connection); // ??? why not destructor
 
