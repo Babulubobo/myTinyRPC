@@ -4,6 +4,7 @@
 #include <google/protobuf/service.h>
 #include <memory>
 #include "myRPC/net/tcp/net_addr.h"
+#include "myRPC/net/tcp/tcp_client.h"
 
 namespace myRPC
 {
@@ -33,6 +34,8 @@ public:
 
     google::protobuf::Closure* getClosure();
 
+    TcpClient* getTcpClient();
+
 
 private:
     NetAddr::s_ptr m_peer_addr {nullptr};
@@ -45,6 +48,7 @@ private:
 
     bool m_is_init {false};
 
+    TcpClient::s_ptr m_client {nullptr};
 };
     
 } // namespace myRPC

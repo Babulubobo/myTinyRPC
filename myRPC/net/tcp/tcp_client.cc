@@ -102,4 +102,12 @@ void TcpClient::readMessage(const std::string& msg_id, std::function<void(Abstra
     m_connection->pushReadMessage(msg_id, done);
     m_connection->listenRead();    
 }
+
+void TcpClient::stop() {
+    if(m_event_loop->isLooping()) {
+        m_event_loop->stop();
+    }
+}
+
+
 } // namespace myRPC

@@ -1,6 +1,7 @@
 #ifndef MYRPC_NET_TCP_TCP_CLIENT_H
 #define MYRPC_NET_TCP_TCP_CLIENT_H
 
+#include <memory>
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/eventloop.h"
 #include "myRPC/net/coder/abstract_protocol.h"
@@ -12,6 +13,8 @@ namespace myRPC
 class TcpClient {
 
 public:
+
+    typedef std::shared_ptr<TcpClient> s_ptr;
 
     TcpClient(NetAddr::s_ptr peer_addr);
 
@@ -28,6 +31,8 @@ public:
     // asyc read message
     // if read message succeed, "done" will be done, "done"'s parameter is the message
     void readMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
+
+    void stop();
 
 private:
 

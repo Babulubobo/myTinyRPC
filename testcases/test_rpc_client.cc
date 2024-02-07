@@ -82,8 +82,11 @@ void test_rpc_channel() {
     std::shared_ptr<myRPC::RpcController> controller = std::make_shared<myRPC::RpcController>();
     controller->SetMsgID("99998888");
 
-    std::shared_ptr<myRPC::RpcClosure> closure = std::make_shared<myRPC::RpcClosure>([request, response]() {
+    std::shared_ptr<myRPC::RpcClosure> closure = std::make_shared<myRPC::RpcClosure>([request, response, channel]() mutable {
         INFOLOG("call rpc success, request[%s], response[%s]", request->ShortDebugString().c_str(), response->ShortDebugString().c_str());
+        INFOLOG("now exit eventloop");
+        channel->getTcpClient()->stop();
+        channel.reset();
     });
 
     channel->Init(controller, request, response, closure);
@@ -103,6 +106,8 @@ int main() {
     // test_tcp_client();
 
     test_rpc_channel();
+
+    INFOLOG("test_rpc_channel end");
 
     return 0;
 }

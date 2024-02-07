@@ -14,7 +14,7 @@ namespace myRPC
 {
 
 RpcChannel::RpcChannel(NetAddr::s_ptr peer_addr) : m_peer_addr(peer_addr) {
-
+    m_client = std::make_shared<TcpClient>(m_peer_addr);
 }
 
 RpcChannel::~RpcChannel() {
@@ -60,16 +60,14 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
         return;
     }
 
-    s_ptr channel = shared_from_this();
+    s_ptr channel = shared_from_this();    
 
-    TcpClient client(m_peer_addr);
-
-    client.connect([&client, req_protocol, channel]() mutable { 
-        client.writeMessage(req_protocol, [&client, req_protocol, channel](AbstractProtocol::s_ptr) mutable {
+    m_client->connect([req_protocol, channel]() mutable { 
+        channel->getTcpClient()->writeMessage(req_protocol, [req_protocol, channel](AbstractProtocol::s_ptr) mutable {
             INFOLOG("%s | send request success., method_name [%s]", 
                 req_protocol->m_msg_id.c_str(), req_protocol->m_method_name.c_str());
 
-            client.readMessage(req_protocol->m_msg_id, [channel](AbstractProtocol::s_ptr msg) mutable {// mutable???
+            channel->getTcpClient()->readMessage(req_protocol->m_msg_id, [channel](AbstractProtocol::s_ptr msg) mutable {// mutable???
                 std::shared_ptr<myRPC::TinyPBProtocal> rsp_protocol = std::dynamic_pointer_cast<myRPC::TinyPBProtocal>(msg);
                 INFOLOG("%s | success get rpc response, call method name %s",
                      rsp_protocol->m_msg_id.c_str(), rsp_protocol->m_method_name.c_str());
@@ -127,5 +125,8 @@ google::protobuf::Closure* RpcChannel::getClosure() {
     return m_closure.get();
 }
 
+TcpClient* RpcChannel::getTcpClient() {
+    return m_client.get();
+}
 
 } // namespace myRPC

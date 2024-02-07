@@ -179,6 +179,7 @@ void Eventloop::wakeup(){
 
 void Eventloop::stop(){
     m_stop_flag = true;
+    wakeup();
 }
 
 void Eventloop::dealWakeUp() {
