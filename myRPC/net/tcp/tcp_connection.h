@@ -92,8 +92,6 @@ private:
     // key: req_id
     std::map<std::string, std::function<void(AbstractProtocol::s_ptr)>> m_read_dones;
 
-    std::shared_ptr<RpcDispatcher> m_dispatcher;
-
 };
     
 } // namespace myRPC

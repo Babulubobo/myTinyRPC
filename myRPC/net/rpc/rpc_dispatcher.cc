@@ -12,6 +12,15 @@
 
 namespace myRPC
 {
+static RpcDispatcher* g_rpc_dispatcher = nullptr;
+
+RpcDispatcher* RpcDispatcher::GetRpcDispatcher() {
+    if(g_rpc_dispatcher != nullptr) {
+        return g_rpc_dispatcher;
+    }
+    g_rpc_dispatcher = new RpcDispatcher;
+    return g_rpc_dispatcher;
+}
 
 void RpcDispatcher::dispatch(AbstractProtocol::s_ptr request, AbstractProtocol::s_ptr response, TcpConnection* connection) {
     std::shared_ptr<TinyPBProtocal> req_protocol = std::dynamic_pointer_cast<TinyPBProtocal>(request);
@@ -22,7 +31,7 @@ void RpcDispatcher::dispatch(AbstractProtocol::s_ptr request, AbstractProtocol::
     rsp_protocol->m_req_id = req_protocol->m_req_id;
     rsp_protocol->m_method_name = req_protocol->m_method_name;
 
-    if(parseServiceFullName(method_full_name, service_name, method_name)) { // "!"???
+    if(!parseServiceFullName(method_full_name, service_name, method_name)) { 
         setTinyPBError(rsp_protocol, ERROR_PARSE_SERVICE_NAME, "parse service name error");
         return;
     }
@@ -68,7 +77,7 @@ void RpcDispatcher::dispatch(AbstractProtocol::s_ptr request, AbstractProtocol::
     service->CallMethod(method, &rpcController, req_msg, rsp_msg, NULL);
 
 
-    if(rsp_msg->SerializeToString(&(rsp_protocol->m_pb_data))) {
+    if(!rsp_msg->SerializeToString(&(rsp_protocol->m_pb_data))) {
         ERRORLOG("%s | serialize error, origin message [%s]", req_protocol->m_req_id.c_str(), rsp_msg->ShortDebugString().c_str());
         setTinyPBError(rsp_protocol, ERROR_FAILED_SERIALIZE, "serialize error");
         if(req_msg != nullptr) {
