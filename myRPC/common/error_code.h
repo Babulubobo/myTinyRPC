@@ -18,7 +18,7 @@ const int ERROR_RPC_CALL_TIMEOUT = SYS_ERROR_PREFIX(0007);    // Rpc call time o
 const int ERROR_SERVICE_NOT_FOUND = SYS_ERROR_PREFIX(0008);    // Service not found
 const int ERROR_METHOD_NOT_FOUND = SYS_ERROR_PREFIX(0009);    // Method not found 
 const int ERROR_PARSE_SERVICE_NAME = SYS_ERROR_PREFIX(0010);    // Service name parse failed
-// const int ERROR_RPC_CHANNEL_INIT = SYS_ERROR_PREFIX(0011);    // Rpc channel init failed
+const int ERROR_RPC_CHANNEL_INIT = SYS_ERROR_PREFIX(0011);    // Rpc channel init failed
 // const int ERROR_RPC_PEER_ADDR = SYS_ERROR_PREFIX(0012);    // Rpc peer addr error
 
 

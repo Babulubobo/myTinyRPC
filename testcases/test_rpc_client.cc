@@ -21,6 +21,9 @@
 #include "myRPC/net/coder/tinypb_protocol.h"
 #include "order.pb.h"
 #include "myRPC/net/rpc/rpc_dispatcher.h"
+#include "myRPC/net/rpc/rpc_channel.h"
+#include "myRPC/net/rpc/rpc_controller.h"
+#include "myRPC/net/rpc/rpc_closure.h"
 
 #include <iostream>
 
@@ -65,6 +68,31 @@ void test_tcp_client() {
     });
 }
 
+void test_rpc_channel() {
+    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", 12345);
+    std::shared_ptr<myRPC::RpcChannel> channel = std::make_shared<myRPC::RpcChannel>(addr);
+
+    std::shared_ptr<makeOrderRequest> request = std::make_shared<makeOrderRequest>();
+
+    request->set_price(100);
+    request->set_goods("apple");
+
+    std::shared_ptr<makeOrderResponse> response = std::make_shared<makeOrderResponse>();
+
+    std::shared_ptr<myRPC::RpcController> controller = std::make_shared<myRPC::RpcController>();
+    controller->SetMsgID("99998888");
+
+    std::shared_ptr<myRPC::RpcClosure> closure = std::make_shared<myRPC::RpcClosure>([request, response]() {
+        INFOLOG("call rpc success, request[%s], response[%s]", request->ShortDebugString().c_str(), response->ShortDebugString().c_str());
+    });
+
+    channel->Init(controller, request, response, closure);
+    
+    Order_Stub stub(channel.get());
+
+    stub.makeOrder(controller.get(), request.get(), response.get(), closure.get());
+}
+
 
 int main() {
 
@@ -72,7 +100,9 @@ int main() {
     
     myRPC::Logger::InitGlobalLogger();
 
-    test_tcp_client();
+    // test_tcp_client();
+
+    test_rpc_channel();
 
     return 0;
 }
