@@ -5,6 +5,7 @@
 #include <memory>
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/tcp/tcp_client.h"
+#include "myRPC/net/timer_event.h"
 
 namespace myRPC
 {
@@ -36,6 +37,7 @@ public:
 
     TcpClient* getTcpClient();
 
+    TimerEvent::s_ptr getTimerEvent();
 
 private:
     NetAddr::s_ptr m_peer_addr {nullptr};
@@ -49,6 +51,8 @@ private:
     bool m_is_init {false};
 
     TcpClient::s_ptr m_client {nullptr};
+
+    TimerEvent::s_ptr m_timer_event {nullptr};
 };
     
 } // namespace myRPC
