@@ -208,7 +208,7 @@ const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocal> message, i
 
     message->m_pk_len = pk_len;
     message->m_msg_id_len = msg_id_len;
-    message->m_method_name = method_name_len;
+    message->m_method_name_len = method_name_len;
     message->m_err_info_len = err_info_len;
     message->parse_success = true;
     len = pk_len;

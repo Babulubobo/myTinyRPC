@@ -5,9 +5,27 @@
 #include <memory>
 #include "myRPC/net/tcp/net_addr.h"
 #include "myRPC/net/tcp/tcp_client.h"
+#include "myRPC/net/timer_event.h"
 
 namespace myRPC
 {
+
+#define NEWMESSAGE(type, var_name) \
+    std::shared_ptr<type> var_name = std::make_shared<type>(); \
+
+#define NEWRPCCONTROLLER(var_name) \
+    std::shared_ptr<myRPC::RpcController> var_name = std::make_shared<myRPC::RpcController>(); \
+
+#define NEWRPCCHANNEL(addr, var_name) \
+    std::shared_ptr<myRPC::RpcChannel> var_name = std::make_shared<myRPC::RpcChannel>(std::make_shared<myRPC::IPNetAddr>(addr)); \
+
+#define CALLRPC(addr, method_name, controller, request, response, closure) \
+{ \
+    NEWRPCCHANNEL(addr, channel); \
+    channel->Init(controller, request, response, closure); \
+    Order_Stub(channel.get()).method_name(controller.get(), request.get(), response.get(), closure.get()); \
+} \
+
 class RpcChannel : public google::protobuf::RpcChannel, public::std::enable_shared_from_this<RpcChannel> { //???
 public:
     typedef std::shared_ptr<RpcChannel> s_ptr;
@@ -36,6 +54,7 @@ public:
 
     TcpClient* getTcpClient();
 
+    TimerEvent::s_ptr getTimerEvent();
 
 private:
     NetAddr::s_ptr m_peer_addr {nullptr};
@@ -49,6 +68,8 @@ private:
     bool m_is_init {false};
 
     TcpClient::s_ptr m_client {nullptr};
+
+    TimerEvent::s_ptr m_timer_event {nullptr};
 };
     
 } // namespace myRPC

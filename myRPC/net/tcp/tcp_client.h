@@ -6,6 +6,7 @@
 #include "myRPC/net/eventloop.h"
 #include "myRPC/net/coder/abstract_protocol.h"
 #include "myRPC/net/tcp/tcp_connection.h"
+#include "myRPC/net/timer_event.h"
 
 namespace myRPC
 {
@@ -43,6 +44,9 @@ public:
     NetAddr::s_ptr getLocalAddr();
 
     void initLocalAddr();
+
+    void addTimerEvent(TimerEvent::s_ptr timer_event);
+
 
 private:
 
