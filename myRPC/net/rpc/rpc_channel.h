@@ -9,6 +9,23 @@
 
 namespace myRPC
 {
+
+#define NEWMESSAGE(type, var_name) \
+    std::shared_ptr<type> var_name = std::make_shared<type>(); \
+
+#define NEWRPCCONTROLLER(var_name) \
+    std::shared_ptr<myRPC::RpcController> var_name = std::make_shared<myRPC::RpcController>(); \
+
+#define NEWRPCCHANNEL(addr, var_name) \
+    std::shared_ptr<myRPC::RpcChannel> var_name = std::make_shared<myRPC::RpcChannel>(std::make_shared<myRPC::IPNetAddr>(addr)); \
+
+#define CALLRPC(addr, method_name, controller, request, response, closure) \
+{ \
+    NEWRPCCHANNEL(addr, channel); \
+    channel->Init(controller, request, response, closure); \
+    Order_Stub(channel.get()).method_name(controller.get(), request.get(), response.get(), closure.get()); \
+} \
+
 class RpcChannel : public google::protobuf::RpcChannel, public::std::enable_shared_from_this<RpcChannel> { //???
 public:
     typedef std::shared_ptr<RpcChannel> s_ptr;

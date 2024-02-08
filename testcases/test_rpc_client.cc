@@ -69,18 +69,17 @@ void test_tcp_client() {
 }
 
 void test_rpc_channel() {
-    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", 12345);
-    std::shared_ptr<myRPC::RpcChannel> channel = std::make_shared<myRPC::RpcChannel>(addr);
+    NEWRPCCHANNEL("127.0.0.1:12345", channel);
 
-    std::shared_ptr<makeOrderRequest> request = std::make_shared<makeOrderRequest>();
+    NEWMESSAGE(makeOrderRequest, request);
+    NEWMESSAGE(makeOrderResponse, response);
 
     request->set_price(100);
     request->set_goods("apple");
 
-    std::shared_ptr<makeOrderResponse> response = std::make_shared<makeOrderResponse>();
-
-    std::shared_ptr<myRPC::RpcController> controller = std::make_shared<myRPC::RpcController>();
+    NEWRPCCONTROLLER(controller);
     controller->SetMsgID("99998888");
+    controller->SetTimeOut(10000);
 
     std::shared_ptr<myRPC::RpcClosure> closure = std::make_shared<myRPC::RpcClosure>([request, response, channel, controller]() mutable {
         if(controller->GetErrorCode() == 0) {
@@ -97,13 +96,7 @@ void test_rpc_channel() {
         channel.reset();
     });
 
-    channel->Init(controller, request, response, closure);
-    
-    controller->SetTimeOut(10000);
-
-    Order_Stub stub(channel.get());
-
-    stub.makeOrder(controller.get(), request.get(), response.get(), closure.get());
+    CALLRPC("127.0.0.1:12345", makeOrder, controller, request, response, closure);
 }
 
 
