@@ -4,9 +4,11 @@
 #include <queue>
 #include <string>
 #include <memory>
+#include <semaphore.h>
 
 #include "myRPC/common/config.h"
 #include "myRPC/common/mutex.h"
+#include "myRPC/net/timer_event.h"
 
 namespace myRPC {
 
@@ -34,21 +36,18 @@ std::string formatString(const char* str, Args&&... args) {
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Debug) { \
     myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Debug).toString() \
      + "[" + std::string(__FILE__) + ":" +std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
-    myRPC::Logger::GetGlobalLogger()->log();\
     }\
     
 #define INFOLOG(str, ...)\
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Info) { \
     myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Info).toString() \
     + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
-    myRPC::Logger::GetGlobalLogger()->log();\
     }\
 
 #define ERRORLOG(str, ...)\
     if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Error) { \
     myRPC::Logger::GetGlobalLogger()->pushLog(myRPC::LogEvent(myRPC::LogLevel::Error).toString() \
     + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
-    myRPC::Logger::GetGlobalLogger()->log();\
     }\
 
 
@@ -62,9 +61,56 @@ enum LogLevel {
 
 
 
+class AsyncLogger {
+
+public:
+    typedef std::shared_ptr<AsyncLogger> s_ptr;
+
+    AsyncLogger(std::string& file_name, std::string file_path, int max_size);
+
+    void stop();
+
+    // 刷新到磁盘
+    void flush();
+
+    void pushLogBuffer(std::vector<std::string>& vec);
+
+public:
+    static void* Loop(void* arg);
+
+private:
+
+    std::queue<std::vector<std::string>> m_buffer;
+    
+    // m_file_path/m_file_name_yyyymmdd.0
+    std::string m_file_name; // log output file name
+    std::string m_file_path; // log output file path
+
+    int m_max_file_size {0}; // max single log file size, measured in bytes
+
+    sem_t m_semaphore;
+
+    pthread_t m_thread;
+
+    pthread_cond_t m_condition; // 条件变量???
+    Mutex m_mutex;
+
+    std::string m_date; //当前打印的日志文件日期
+    FILE* m_file_handler {nullptr}; //当前打开的日志文件句柄
+
+    bool m_reopen_flag {false};
+
+    int m_no {0}; //日志文件序号
+
+    bool m_stop_flag {false};
+
+};
+
+
+
 class Logger {
 public:
-    Logger(LogLevel level) : m_set_level(level) {};
+    Logger(LogLevel level);
 
     typedef std::shared_ptr<Logger> s_ptr;
 
@@ -76,6 +122,10 @@ public:
 
     void log();
 
+    void syncLoop();
+
+    void init();
+
 public:
     static Logger* GetGlobalLogger();
     static void InitGlobalLogger();
@@ -83,10 +133,22 @@ public:
 private:
     LogLevel m_set_level;
 
-    std::queue<std::string> m_buffer;
+    std::vector<std::string> m_buffer;
 
     Mutex m_mutex;
+
+    // m_file_path/m_file_name_yyyymmdd.1
+    std::string m_file_name; // log output file name
+    std::string m_file_path; // log output file path
+
+    int m_max_file_size {0}; // max single log file size
+
+    AsyncLogger::s_ptr m_async_logger;
+
+    TimerEvent::s_ptr m_timer_event;
+
 };
+
 
 
 
@@ -115,6 +177,7 @@ private:
     int32_t m_thread_id; // thread id
 
     LogLevel m_level; // level of log
+
     
 };
 
