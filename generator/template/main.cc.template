@@ -1,0 +1,44 @@
+/************************************************
+    *     *  *   *    * * *    * * *     * * *
+    * * * *    *      *    *   *    *   *
+    *  *  *    *      * * *    * * *    *
+    *     *    *      *    *   *         * * *
+
+ * ${FILE_NAME}
+ * Generate by myRPC framewrok myRPC_generator.py
+ * Do not EDIT!!!
+************************************************/
+
+
+
+#include <google/protobuf/service.h>
+#include "myRPC/common/log.h"
+#include "myRPC/common/config.h"
+#include "myRPC/net/tcp/net_addr.h"
+#include "myRPC/net/tcp/tcp_server.h"
+#include "myRPC/net/rpc/rpc_dispatcher.h"
+${INCLUDE_SERVER_HEADER}
+
+int main(int argc, char* argv[]) {
+
+    if(argc != 2) {
+        printf("Start ${PROJECT_NAME} error, argc not 2\n");
+        printf("Please start like this:\n");
+        printf("./${PROJECT_NAME} ../conf/myRPC.xml\n");
+        return 0;
+    }
+
+    myRPC::Config::SetGlobalConfig(argv[1]);
+    
+    myRPC::Logger::InitGlobalLogger();
+
+    myRPC::RpcDispatcher::GetRpcDispatcher()->registerService(std::make_shared<${CLASS_NAME}>());
+
+    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", myRPC::Config::GetGlobalConfig()->m_port);
+
+    myRPC::TcpServer tcp_server(addr);
+
+    tcp_server.start();
+
+    return 0;
+}

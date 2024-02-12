@@ -2,6 +2,7 @@
 #include "myRPC/net/eventloop.h"
 #include "myRPC/common/log.h"
 #include "myRPC/net/tcp/tcp_connection.h"
+#include "myRPC/common/config.h"
 
 namespace myRPC
 {
@@ -24,7 +25,7 @@ void TcpServer::init() {
     m_acceptor = std::make_shared<TcpAcceptor>(m_local_addr); 
 
     m_main_event_loop = Eventloop::GetCurrentEventLoop();
-    m_io_thread_group = new IOThreadGroup(2);
+    m_io_thread_group = new IOThreadGroup(Config::GetGlobalConfig()->m_io_threads);
     m_listen_fd_event = new FdEvent(m_acceptor->getListenFd());
 
     // "std::bind" is different from "bind" in socket programming
