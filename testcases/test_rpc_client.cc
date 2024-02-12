@@ -102,9 +102,9 @@ void test_rpc_channel() {
 
 int main() {
 
-    myRPC::Config::SetGlobalConfig("../conf/myRPC_client.xml");
+    myRPC::Config::SetGlobalConfig(NULL);
     
-    myRPC::Logger::InitGlobalLogger();
+    myRPC::Logger::InitGlobalLogger(0);
 
     // test_tcp_client();
 

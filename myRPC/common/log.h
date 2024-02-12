@@ -130,7 +130,7 @@ private:
 
 class Logger {
 public:
-    Logger(LogLevel level);
+    Logger(LogLevel level, int type = 1);
 
     typedef std::shared_ptr<Logger> s_ptr;
 
@@ -150,7 +150,7 @@ public:
 
 public:
     static Logger* GetGlobalLogger();
-    static void InitGlobalLogger();
+    static void InitGlobalLogger(int type = 1);
     
 private:
     LogLevel m_set_level;
@@ -173,6 +173,8 @@ private:
     AsyncLogger::s_ptr m_async_app_logger;
 
     TimerEvent::s_ptr m_timer_event;
+
+    int m_type {0};  // 1: async log, 0: sync log
 
 };
 

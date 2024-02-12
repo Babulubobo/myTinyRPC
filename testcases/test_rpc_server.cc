@@ -45,25 +45,27 @@ public:
     }
 };
 
-void test_tcp_server() {
-    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", 12345);
-    DEBUGLOG("create addr %s", addr->toString().c_str());
+int main(int argc, char* argv[]) {
 
-    myRPC::TcpServer tcp_server(addr);
+    if(argc != 2) {
+        printf("Start test_rpc_server error, argc not 2\n");
+        printf("Please start like this:\n");
+        printf("./test_rpc_server ../conf/myRPC.xml\n");
+        return 0;
+    }
 
-    tcp_server.start();
-}
-
-int main() {
-
-    myRPC::Config::SetGlobalConfig("../conf/myRPC.xml");
+    myRPC::Config::SetGlobalConfig(argv[1]);
     
     myRPC::Logger::InitGlobalLogger();
 
     std::shared_ptr<OrderImpl> service = std::make_shared<OrderImpl>();
     myRPC::RpcDispatcher::GetRpcDispatcher()->registerService(service);
 
-    test_tcp_server();
+    myRPC::IPNetAddr::s_ptr addr = std::make_shared<myRPC::IPNetAddr>("127.0.0.1", myRPC::Config::GetGlobalConfig()->m_port);
+
+    myRPC::TcpServer tcp_server(addr);
+
+    tcp_server.start();
 
     return 0;
 }

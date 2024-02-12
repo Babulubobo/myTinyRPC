@@ -26,8 +26,17 @@ Config* Config::GetGlobalConfig(){
 
 void Config::SetGlobalConfig(const char* xmlfile){
     if(g_config == nullptr) {
-        g_config = new Config(xmlfile);
+        if(xmlfile != NULL) {
+            g_config = new Config(xmlfile);
+        }
+        else {
+            g_config = new Config();
+        }
     }
+}
+
+Config::Config() {
+    m_log_level = "DEBUG";
 }
 
 Config::Config(const char* xmlfile) {
@@ -43,6 +52,9 @@ Config::Config(const char* xmlfile) {
 
     //read log node
     READ_XML_NODE(log, root_node);
+
+    //read server node
+    READ_XML_NODE(server, root_node);
 
     //read log level
     READ_STR_FROM_XML_NODE(log_level, log_node);
@@ -60,6 +72,14 @@ Config::Config(const char* xmlfile) {
 
     printf("LOG -- CONFIG LEVEL[%s], FILE_NAME[%s], FILE_PATH[%s] MAX_FILE_SIZE[%d B], SYNC_INTERVAL[%d ms]\n",
         m_log_level.c_str(), m_log_file_name.c_str(), m_log_file_path.c_str(), m_log_max_file_size, m_log_sync_interval);
+
+    READ_STR_FROM_XML_NODE(port, server_node);
+    READ_STR_FROM_XML_NODE(io_threads, server_node);
+
+    m_port = std::atoi(port_str.c_str());
+    m_io_threads = std::atoi(io_threads_str.c_str());
+
+    printf("SERVER -- PORT[%d], IO_THREADS[%d]\n", m_port, m_io_threads);
 
 }
 
