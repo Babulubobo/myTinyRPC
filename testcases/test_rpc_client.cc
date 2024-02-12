@@ -92,7 +92,7 @@ void test_rpc_channel() {
                 controller->GetErrorCode(), controller->GetErrorinfo().c_str());
         }
         INFOLOG("now exit eventloop");
-        channel->getTcpClient()->stop();
+        // channel->getTcpClient()->stop();
         channel.reset();
     });
 
@@ -102,7 +102,7 @@ void test_rpc_channel() {
 
 int main() {
 
-    myRPC::Config::SetGlobalConfig("../conf/myRPC.xml");
+    myRPC::Config::SetGlobalConfig("../conf/myRPC_client.xml");
     
     myRPC::Logger::InitGlobalLogger();
 

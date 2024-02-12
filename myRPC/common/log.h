@@ -52,6 +52,26 @@ std::string formatString(const char* str, Args&&... args) {
 
 
 
+#define APPDEBUGLOG(str, ...)\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Debug) { \
+    myRPC::Logger::GetGlobalLogger()->pushAppLog(myRPC::LogEvent(myRPC::LogLevel::Debug).toString() \
+     + "[" + std::string(__FILE__) + ":" +std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
+    }\
+    
+#define APPINFOLOG(str, ...)\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Info) { \
+    myRPC::Logger::GetGlobalLogger()->pushAppLog(myRPC::LogEvent(myRPC::LogLevel::Info).toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
+    }\
+
+#define APPERRORLOG(str, ...)\
+    if(myRPC::Logger::GetGlobalLogger()->getLogLevel() <= myRPC::Error) { \
+    myRPC::Logger::GetGlobalLogger()->pushAppLog(myRPC::LogEvent(myRPC::LogLevel::Error).toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__ ) + "]\t" + myRPC::formatString(str, ##__VA_ARGS__) + '\n');\
+    }\
+
+
+
 enum LogLevel {
     Unknown = 0,
     Debug = 1,
@@ -66,7 +86,7 @@ class AsyncLogger {
 public:
     typedef std::shared_ptr<AsyncLogger> s_ptr;
 
-    AsyncLogger(std::string& file_name, std::string file_path, int max_size);
+    AsyncLogger(const std::string& file_name, const std::string& file_path, int max_size);
 
     void stop();
 
@@ -120,6 +140,8 @@ public:
 
     void pushLog(const std::string& msg);
 
+    void pushAppLog(const std::string& msg);
+
     void log();
 
     void syncLoop();
@@ -134,8 +156,11 @@ private:
     LogLevel m_set_level;
 
     std::vector<std::string> m_buffer;
+    std::vector<std::string> m_app_buffer;
 
     Mutex m_mutex;
+
+    Mutex m_app_mutex;
 
     // m_file_path/m_file_name_yyyymmdd.1
     std::string m_file_name; // log output file name
@@ -144,6 +169,8 @@ private:
     int m_max_file_size {0}; // max single log file size
 
     AsyncLogger::s_ptr m_async_logger;
+
+    AsyncLogger::s_ptr m_async_app_logger;
 
     TimerEvent::s_ptr m_timer_event;
 

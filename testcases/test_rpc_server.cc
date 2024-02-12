@@ -11,6 +11,7 @@
 #include <google/protobuf/service.h>
 #include "myRPC/common/log.h"
 #include "myRPC/common/config.h"
+#include "myRPC/common/run_time.h"
 #include "myRPC/net/tcp/tcp_client.h"
 
 #include "myRPC/net/tcp/net_addr.h"
@@ -30,15 +31,16 @@ public:
                         const ::makeOrderRequest* request,
                         ::makeOrderResponse* response,
                         ::google::protobuf::Closure* done) {
-        DEBUGLOG("start sleep 5s");
+        APPDEBUGLOG("start sleep 5s");
         sleep(5);
-        DEBUGLOG("end sleep 5s");
+        APPDEBUGLOG("end sleep 5s");
         if(request->price() < 10) {
             response->set_ret_code(-1);
             response->set_res_info("short balance");
             return;
         }
         response->set_order_id("20240207");
+        APPDEBUGLOG("call makeOrder success");
 
     }
 };
