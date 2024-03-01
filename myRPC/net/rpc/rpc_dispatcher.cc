@@ -53,7 +53,7 @@ void RpcDispatcher::dispatch(AbstractProtocol::s_ptr request, AbstractProtocol::
 
     google::protobuf::Message* req_msg = service->GetRequestPrototype(method).New();
 
-    // 反序列化， 将 pb_data 反序列化为 request
+    // 反序列化， 将 pb_data 里的二进制字节流反序列化到 req_msg中
     // ??? req_protocol->m_pb_data 什么时候序列化的???
     if(!req_msg->ParseFromString(req_protocol->m_pb_data)) {
         ERRORLOG("%s | deserialize error", req_protocol->m_msg_id.c_str());
@@ -110,11 +110,11 @@ bool RpcDispatcher::parseServiceFullName(const std::string& full_name, std::stri
         return false;
     }
     size_t i = full_name.find_first_of(".");
-    if(i == full_name.npos) { // ???
+    if(i == full_name.npos) { 
         ERRORLOG("not find . in full name [%s]", full_name.c_str());
         return false;
     }
-    service_name = full_name.substr(0, i); //???
+    service_name = full_name.substr(0, i); 
     method_name = full_name.substr(i + 1, full_name.length() - i - 1);
     INFOLOG("parse service_name[%s] and method_name[%s] from full name [%s]", service_name.c_str(), method_name.c_str(), full_name.c_str());
     return true;

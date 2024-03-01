@@ -18,7 +18,7 @@ std::string MsgIDUtil::GenMsgID() {
         if(g_random_fd == -1) {
             g_random_fd = open("/dev/urandom", O_RDONLY); //???
         }
-        std::string res(g_msg_id_length, 0); //这是什么构造???
+        std::string res(g_msg_id_length, 0);
         if((read(g_random_fd, &res[0], g_msg_id_length)) != g_msg_id_length) {
             ERRORLOG("read from /dev/urandom error");
             return "";

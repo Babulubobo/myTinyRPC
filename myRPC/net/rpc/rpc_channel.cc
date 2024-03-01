@@ -105,7 +105,8 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
 
                 // when read the response succeed, cancel timer event
                 channel->getTimerEvent()->setCanceled(true);
-
+                
+                // deserialize error
                 if(!(channel->getResponse()->ParseFromString(rsp_protocol->m_pb_data))) {
                     ERRORLOG("%s | deserialize error", rsp_protocol->m_msg_id.c_str());
                     my_controller->SetError(ERROR_FAILED_SERIALIZE, "serialize error");
