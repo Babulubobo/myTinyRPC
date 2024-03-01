@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <assert.h>
+#include <signal.h>
 #include "myRPC/common/log.h"
 #include "myRPC/common/util.h"
 #include "myRPC/common/config.h"
@@ -13,6 +14,18 @@
 namespace myRPC{
 
 static Logger* g_logger = nullptr;
+
+
+void CoreDumpHandler(int signal_no) {
+    ERRORLOG("Invalid Signal, EXIT");
+    g_logger->getAsyncLogger()->flush();
+    pthread_join(g_logger->getAsyncLogger()->m_thread, NULL);
+    pthread_join(g_logger->getAsyncAppLogger()->m_thread, NULL);
+
+    signal(signal_no, SIG_DFL);
+    raise(signal_no);
+}
+
 
 Logger::Logger(LogLevel level, int type /* = 1 */) : m_set_level(level), m_type(type) {
 
@@ -40,6 +53,12 @@ void Logger::init() {
     m_timer_event = std::make_shared<TimerEvent>(Config::GetGlobalConfig()->m_log_sync_interval, true, std::bind(&Logger::syncLoop, this));
 
     Eventloop::GetCurrentEventLoop()->addTimerEvent(m_timer_event);
+    signal(SIGSEGV, CoreDumpHandler);
+    signal(SIGABRT, CoreDumpHandler);
+    signal(SIGTERM, CoreDumpHandler);
+    signal(SIGKILL, CoreDumpHandler);
+    signal(SIGINT, CoreDumpHandler);
+    signal(SIGSTKFLT, CoreDumpHandler);
 }
 
 void Logger::syncLoop() {

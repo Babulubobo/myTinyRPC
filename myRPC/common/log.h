@@ -138,6 +138,14 @@ public:
         return m_set_level;
     }
 
+    AsyncLogger::s_ptr getAsyncLogger() {
+        return m_async_logger;
+    }
+
+    AsyncLogger::s_ptr getAsyncAppLogger() {
+        return m_async_app_logger;
+    }
+
     void pushLog(const std::string& msg);
 
     void pushAppLog(const std::string& msg);
@@ -185,7 +193,7 @@ std::string LogLevelToString(LogLevel level);
 
 LogLevel StringToLogLevel(const std::string& log_level);
 
-
+void CoreDumpHandler(int signal_no);
 
 class LogEvent {
 public:
