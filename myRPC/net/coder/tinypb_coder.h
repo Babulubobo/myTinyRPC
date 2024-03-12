@@ -13,6 +13,8 @@ namespace myRPC
 
 class TinyPBCoder : public AbstractCoder {
 
+    static int g_random_fd;
+
 public:
     TinyPBCoder(){}
     ~TinyPBCoder(){}
@@ -23,8 +25,12 @@ public:
     //  Convert the byte stream inside the buffer into a message object.
     void decode(std::vector<AbstractProtocol::s_ptr>& out_messages, TcpBuffer::s_ptr buffer);
 
+    std::string generateMsgID(std::shared_ptr<TinyPBProtocal> message);
+
 private:
     const char* encodeTinyPB(std::shared_ptr<TinyPBProtocal> message, int& len);
+
+    
 };
     
 } // namespace myRPC

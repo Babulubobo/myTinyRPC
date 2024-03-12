@@ -1,6 +1,7 @@
 #include <vector>
 #include <string.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include "myRPC/net/coder/tinypb_coder.h"
 #include "myRPC/net/coder/tinypb_protocol.h"
 #include "myRPC/common/util.h"
@@ -12,6 +13,7 @@ namespace myRPC
 // Convert the message object into a byte stream and write it to the buffer.
 void TinyPBCoder::encode(std::vector<AbstractProtocol::s_ptr>& messages, TcpBuffer::s_ptr out_buffer) {
     for(auto &i : messages) {
+        // dynamic_pointer_cast：作用和dynamic_cast相同，用于向下类型转换，只不过是用在智能指针上
         std::shared_ptr<TinyPBProtocal> msg = std::dynamic_pointer_cast<TinyPBProtocal>(i);
         int len = 0;
         const char*buf = encodeTinyPB(msg, len);
@@ -44,14 +46,14 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
         int i = 0;
         for(i = start_index; i < buffer->writeIndex(); i ++) {
             if(tmp[i] == TinyPBProtocal::PB_START) {
-                // get the next 4 byte, 网络字节序，需要转化为主机字节序
-                if(i + 1 < buffer->writeIndex()) { // why +1? not +4??? because start from +1
+                // get the next 4 bytes(1 int), 网络字节序，需要转化为主机字节序
+                if(i + 1 < buffer->writeIndex()) { // 1 int = 4 bytes
                     pk_len = getInt32FromNetByte(&tmp[i+1]);
                     DEBUGLOG("get pk_len = %d", pk_len);
 
                     int j = i + pk_len - 1; // the PB_END index
                     if(j >= buffer->writeIndex()) {
-                        continue; //???
+                        continue; //找到真正代表协议起始头的0x02
                     }
                     if(tmp[j] == TinyPBProtocal::PB_END) {
                         start_index = i;
@@ -89,7 +91,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             message->m_msg_id = std::string(msg_id);
             DEBUGLOG("parse msg_id=%s", message->m_msg_id.c_str());
 
-            int method_name_len_index = msg_id_index + message->m_msg_id_len; // no sizeof 
+            int method_name_len_index = msg_id_index + message->m_msg_id_len;  
             if(method_name_len_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, method_name_len_index[%d] >= end_index[%d]", method_name_len_index, end_index);
@@ -103,7 +105,7 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
             message->m_method_name = std::string(method_name);
             DEBUGLOG("parse method_name=%s", message->m_method_name.c_str());
 
-            int err_code_index = method_name_index + message->m_method_name_len; // no sizeof
+            int err_code_index = method_name_index + message->m_method_name_len; 
             if(err_code_index >= end_index) {
                 message->parse_success = false;
                 ERRORLOG("parse error, err_code_index[%d] >= end_index[%d]", err_code_index, end_index);
@@ -219,3 +221,6 @@ const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocal> message, i
 }
     
 } // namespace myRPC
+
+
+
